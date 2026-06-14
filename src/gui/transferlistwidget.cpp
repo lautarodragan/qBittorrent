@@ -57,6 +57,7 @@
 #include "base/utils/misc.h"
 #include "base/utils/string.h"
 #include "autoexpandabledialog.h"
+#include "filterablemenu.h"
 #include "deletionconfirmationdialog.h"
 #include "interfaces/iguiapplication.h"
 #include "mainwindow.h"
@@ -1203,7 +1204,9 @@ void TransferListWidget::displayListMenu()
     QStringList categories = BitTorrent::Session::instance()->categories();
     std::ranges::sort(categories, Utils::Compare::NaturalLessThan<Qt::CaseInsensitive>());
 
-    QMenu *categoryMenu = listMenu->addMenu(UIThemeManager::instance()->getIcon(u"view-categories"_s), tr("Categor&y"));
+    auto *categoryMenu = new FilterableMenu(tr("Categor&y"), listMenu);
+    categoryMenu->setIcon(UIThemeManager::instance()->getIcon(u"view-categories"_s));
+    listMenu->addMenu(categoryMenu);
 
     categoryMenu->addAction(UIThemeManager::instance()->getIcon(u"list-add"_s), tr("&New...", "New category...")
         , this, &TransferListWidget::askNewCategoryForSelection);
@@ -1214,18 +1217,22 @@ void TransferListWidget::displayListMenu()
     for (const QString &category : asConst(categories))
     {
         const QString escapedCategory = QString(category).replace(u'&', u"&&"_s);  // avoid '&' becomes accelerator key
-        QAction *categoryAction = categoryMenu->addAction(UIThemeManager::instance()->getIcon(u"view-categories"_s), escapedCategory
-            , this, [this, category]() { setSelectionCategory(category); });
+        auto *categoryAction = new QAction(UIThemeManager::instance()->getIcon(u"view-categories"_s), escapedCategory, categoryMenu);
+        connect(categoryAction, &QAction::triggered, this, [this, category]() { setSelectionCategory(category); });
 
         if (allSameCategory && (category == firstCategory))
         {
             categoryAction->setCheckable(true);
             categoryAction->setChecked(true);
         }
+
+        categoryMenu->addFilterableAction(categoryAction);
     }
 
     // Tag Menu
-    QMenu *tagsMenu = listMenu->addMenu(UIThemeManager::instance()->getIcon(u"tags"_s, u"view-categories"_s), tr("Ta&gs"));
+    auto *tagsMenu = new FilterableMenu(tr("Ta&gs"), listMenu);
+    tagsMenu->setIcon(UIThemeManager::instance()->getIcon(u"tags"_s, u"view-categories"_s));
+    listMenu->addMenu(tagsMenu);
 
     tagsMenu->addAction(UIThemeManager::instance()->getIcon(u"list-add"_s), tr("&Add...", "Add / assign multiple tags...")
         , this, &TransferListWidget::askAddTagsForSelection);
@@ -1257,7 +1264,7 @@ void TransferListWidget::displayListMenu()
                 removeSelectionTag(tag);
         });
 
-        tagsMenu->addAction(action);
+        tagsMenu->addFilterableAction(action);
     }
 
     actionAutoTMM->setCheckState(allSameAutoTMM
