@@ -1,0 +1,21 @@
+FROM archlinux:latest
+
+RUN pacman -Syu --noconfirm \
+    && pacman -S --noconfirm \
+        base-devel \
+        cmake \
+        ninja \
+        ccache \
+        boost \
+        libtorrent-rasterbar \
+        openssl \
+        zlib \
+        qt6-base \
+        qt6-svg \
+        qt6-tools \
+    && pacman -Scc --noconfirm
+
+ENV CCACHE_DIR=/ccache
+ENV PATH="/usr/lib/ccache/bin:${PATH}"
+
+WORKDIR /src
