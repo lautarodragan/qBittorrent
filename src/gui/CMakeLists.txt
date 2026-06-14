@@ -55,6 +55,7 @@ add_library(qbt_gui STATIC
     desktopintegration.h
     downloadfromurldialog.h
     executionlogwidget.h
+    commandpalette.h
     filterablemenu.h
     filterpatternformat.h
     filterpatternformatmenu.h
@@ -165,6 +166,7 @@ add_library(qbt_gui STATIC
     desktopintegration.cpp
     downloadfromurldialog.cpp
     executionlogwidget.cpp
+    commandpalette.cpp
     filterablemenu.cpp
     filterpatternformatmenu.cpp
     flowlayout.cpp

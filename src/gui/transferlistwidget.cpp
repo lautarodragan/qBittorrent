@@ -57,6 +57,7 @@
 #include "base/utils/misc.h"
 #include "base/utils/string.h"
 #include "autoexpandabledialog.h"
+#include "commandpalette.h"
 #include "filterablemenu.h"
 #include "deletionconfirmationdialog.h"
 #include "interfaces/iguiapplication.h"
@@ -1229,6 +1230,24 @@ void TransferListWidget::displayListMenu()
         categoryMenu->addFilterableAction(categoryAction);
     }
 
+    listMenu->addAction(UIThemeManager::instance()->getIcon(u"view-categories"_s), tr("Find categor&y...")
+        , this, [this, categories, allSameCategory, firstCategory]()
+    {
+        QList<CommandPaletteItem> items;
+        items.reserve(categories.size());
+        for (const QString &cat : categories)
+            items.append({cat, (allSameCategory && cat == firstCategory) ? Qt::Checked : Qt::Unchecked});
+
+        auto *palette = new CommandPalette(tr("Set Category"), items, CommandPalette::Mode::SingleSelect, this);
+        if (palette->exec() == QDialog::Accepted)
+        {
+            const QString selected = palette->selectedText();
+            if (!selected.isEmpty())
+                setSelectionCategory(selected);
+        }
+        delete palette;
+    });
+
     // Tag Menu
     auto *tagsMenu = new FilterableMenu(tr("Ta&gs"), listMenu);
     tagsMenu->setIcon(UIThemeManager::instance()->getIcon(u"tags"_s, u"view-categories"_s));
@@ -1266,6 +1285,38 @@ void TransferListWidget::displayListMenu()
 
         tagsMenu->addFilterableAction(action);
     }
+
+    listMenu->addAction(UIThemeManager::instance()->getIcon(u"tags"_s, u"view-categories"_s), tr("Find ta&g...")
+        , this, [this, tags, tagsInAll, tagsInAny]()
+    {
+        QList<CommandPaletteItem> items;
+        items.reserve(static_cast<int>(tags.size()));
+        for (const Tag &tag : tags)
+        {
+            const Qt::CheckState state = tagsInAll.contains(tag) ? Qt::Checked
+                : tagsInAny.contains(tag) ? Qt::PartiallyChecked : Qt::Unchecked;
+            items.append({Utils::Gui::tagToWidgetText(tag), state});
+        }
+
+        auto *palette = new CommandPalette(tr("Set Tags"), items, CommandPalette::Mode::MultiSelect, this);
+        connect(palette, &CommandPalette::itemToggled, this, [this, tags](const QString &text, const Qt::CheckState state)
+        {
+            // Find the Tag matching this display text
+            for (const Tag &tag : tags)
+            {
+                if (Utils::Gui::tagToWidgetText(tag) == text)
+                {
+                    if (state == Qt::Checked)
+                        addSelectionTag(tag);
+                    else
+                        removeSelectionTag(tag);
+                    break;
+                }
+            }
+        });
+        palette->exec();
+        delete palette;
+    });
 
     actionAutoTMM->setCheckState(allSameAutoTMM
         ? (firstAutoTMM ? Qt::Checked : Qt::Unchecked)
