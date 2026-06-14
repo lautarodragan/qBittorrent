@@ -1178,6 +1178,15 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         }
     }
 
+    if (event->key() == Qt::Key_Escape)
+    {
+        if (!QApplication::activeModalWidget() && (m_tabs->currentWidget() == m_splitter))
+        {
+            m_transferListWidget->setFocus();
+            return;
+        }
+    }
+
     QMainWindow::keyPressEvent(event);
 }
 
