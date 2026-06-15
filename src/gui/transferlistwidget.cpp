@@ -233,6 +233,8 @@ TransferListWidget::TransferListWidget(IGUIApplication *app, QWidget *parent)
     connect(forceStartHotkey, &QShortcut::activated, this, &TransferListWidget::forceStartSelectedTorrents);
     const auto *categoryPaletteHotkey = new QShortcut((Qt::CTRL | Qt::Key_Y), this, nullptr, nullptr, Qt::WidgetShortcut);
     connect(categoryPaletteHotkey, &QShortcut::activated, this, &TransferListWidget::openCategoryPalette);
+    const auto *tagsPaletteHotkey = new QShortcut((Qt::CTRL | Qt::Key_G), this, nullptr, nullptr, Qt::WidgetShortcut);
+    connect(tagsPaletteHotkey, &QShortcut::activated, this, &TransferListWidget::openTagsPalette);
 }
 
 TransferListWidget::~TransferListWidget()
@@ -810,6 +812,51 @@ void TransferListWidget::openCategoryPalette()
         if (!selected.isEmpty())
             setSelectionCategory(selected);
     }
+    delete palette;
+}
+
+void TransferListWidget::openTagsPalette()
+{
+    if (selectionModel()->selectedRows().isEmpty())
+        return;
+
+    TagSet tagsInAll;
+    TagSet tagsInAny;
+    bool first = true;
+    for (const QModelIndex &index : selectionModel()->selectedRows())
+    {
+        const BitTorrent::Torrent *torrent = m_listModel->torrentHandle(mapToSource(index));
+        if (!torrent)
+            continue;
+        const TagSet torrentTags = torrent->tags();
+        tagsInAny.unite(torrentTags);
+        if (first)
+            tagsInAll = torrentTags;
+        else
+            tagsInAll.intersect(torrentTags);
+        first = false;
+    }
+
+    const TagSet tags = BitTorrent::Session::instance()->tags();
+    QList<CommandPaletteItem> items;
+    items.reserve(static_cast<int>(tags.size()));
+    for (const Tag &tag : tags)
+    {
+        const Qt::CheckState state = tagsInAll.contains(tag) ? Qt::Checked
+            : tagsInAny.contains(tag) ? Qt::PartiallyChecked : Qt::Unchecked;
+        items.append({Utils::Gui::tagToWidgetText(tag), state});
+    }
+
+    auto *palette = new CommandPalette(tr("Set Tags"), items, CommandPalette::Mode::MultiSelect, this);
+    connect(palette, &CommandPalette::itemToggled, this, [this](const QString &text, Qt::CheckState state)
+    {
+        const Tag tag = Utils::Gui::widgetTextToTag(text);
+        if (state == Qt::Checked)
+            addSelectionTag(tag);
+        else if (state == Qt::Unchecked)
+            removeSelectionTag(tag);
+    });
+    palette->exec();
     delete palette;
 }
 

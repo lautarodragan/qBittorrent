@@ -120,6 +120,7 @@ private slots:
     void setSelectedAutoTMMEnabled(bool enabled);
     void askNewCategoryForSelection();
     void openCategoryPalette();
+    void openTagsPalette();
     void saveSettings();
 
 private:
