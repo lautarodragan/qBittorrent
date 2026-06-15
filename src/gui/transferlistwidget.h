@@ -119,6 +119,7 @@ private slots:
     void setSelectedFirstLastPiecePrio(bool enabled) const;
     void setSelectedAutoTMMEnabled(bool enabled);
     void askNewCategoryForSelection();
+    void openCategoryPalette();
     void saveSettings();
 
 private:

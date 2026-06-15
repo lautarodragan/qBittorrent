@@ -231,6 +231,8 @@ TransferListWidget::TransferListWidget(IGUIApplication *app, QWidget *parent)
     connect(recheckHotkey, &QShortcut::activated, this, &TransferListWidget::recheckSelectedTorrents);
     const auto *forceStartHotkey = new QShortcut((Qt::CTRL | Qt::Key_M), this, nullptr, nullptr, Qt::WidgetShortcut);
     connect(forceStartHotkey, &QShortcut::activated, this, &TransferListWidget::forceStartSelectedTorrents);
+    const auto *categoryPaletteHotkey = new QShortcut((Qt::CTRL | Qt::Key_Y), this, nullptr, nullptr, Qt::WidgetShortcut);
+    connect(categoryPaletteHotkey, &QShortcut::activated, this, &TransferListWidget::openCategoryPalette);
 }
 
 TransferListWidget::~TransferListWidget()
@@ -771,6 +773,44 @@ void TransferListWidget::setSelectedAutoTMMEnabled(const bool enabled)
 
     for (BitTorrent::Torrent *const torrent : asConst(getSelectedTorrents()))
         torrent->setAutoTMMEnabled(enabled);
+}
+
+void TransferListWidget::openCategoryPalette()
+{
+    if (selectionModel()->selectedRows().isEmpty())
+        return;
+
+    QStringList categories = BitTorrent::Session::instance()->categories();
+    std::ranges::sort(categories, Utils::Compare::NaturalLessThan<Qt::CaseInsensitive>());
+
+    bool allSameCategory = true;
+    QString firstCategory;
+    bool first = true;
+    for (const QModelIndex &index : selectionModel()->selectedRows())
+    {
+        const BitTorrent::Torrent *torrent = m_listModel->torrentHandle(mapToSource(index));
+        if (!torrent)
+            continue;
+        if (first)
+            firstCategory = torrent->category();
+        else if (firstCategory != torrent->category())
+            allSameCategory = false;
+        first = false;
+    }
+
+    QList<CommandPaletteItem> items;
+    items.reserve(categories.size());
+    for (const QString &cat : asConst(categories))
+        items.append({cat, (allSameCategory && cat == firstCategory) ? Qt::Checked : Qt::Unchecked});
+
+    auto *palette = new CommandPalette(tr("Set Category"), items, CommandPalette::Mode::SingleSelect, this);
+    if (palette->exec() == QDialog::Accepted)
+    {
+        const QString selected = palette->selectedText();
+        if (!selected.isEmpty())
+            setSelectionCategory(selected);
+    }
+    delete palette;
 }
 
 void TransferListWidget::askNewCategoryForSelection()
