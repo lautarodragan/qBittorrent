@@ -43,7 +43,6 @@ using namespace Qt::Literals::StringLiterals;
 
 namespace
 {
-    constexpr int PALETTE_WIDTH = 500;
     constexpr int MAX_VISIBLE_ITEMS = 14;
 }
 
@@ -54,7 +53,7 @@ CommandPalette::CommandPalette(const QString &title,
     : QDialog(parent, Qt::Dialog | Qt::FramelessWindowHint)
     , m_mode(mode)
 {
-    setFixedWidth(PALETTE_WIDTH);
+    setFixedWidth(fontMetrics().averageCharWidth() * 60);
 
     auto *outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
@@ -73,7 +72,8 @@ CommandPalette::CommandPalette(const QString &title,
     {
         auto *titleLabel = new QLabel(title, frame);
         titleLabel->setObjectName(u"commandPaletteTitle"_s);
-        titleLabel->setContentsMargins(8, 6, 8, 6);
+        const int m = fontMetrics().height() / 2;
+        titleLabel->setContentsMargins(m, m / 2, m, m / 2);
         layout->addWidget(titleLabel);
 
         auto *sep = new QFrame(frame);
@@ -86,8 +86,6 @@ CommandPalette::CommandPalette(const QString &title,
     m_searchEdit->setObjectName(u"commandPaletteSearch"_s);
     m_searchEdit->setPlaceholderText(tr("Type to filter..."));
     m_searchEdit->setFrame(false);
-    m_searchEdit->setContentsMargins(4, 4, 4, 4);
-    m_searchEdit->setFixedHeight(32);
     layout->addWidget(m_searchEdit);
 
     auto *sep2 = new QFrame(frame);
@@ -160,7 +158,7 @@ bool CommandPalette::eventFilter(QObject *obj, QEvent *event)
         if (!geometry().contains(me->globalPosition().toPoint()))
         {
             reject();
-            return false;
+            return true;
         }
     }
     return QDialog::eventFilter(obj, event);

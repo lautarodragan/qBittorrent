@@ -113,6 +113,8 @@ void FilterableMenu::applyFilter()
 
     if (firstMatch)
         setActiveAction(firstMatch);
+    else
+        setActiveAction(nullptr);
 
     // After hiding/showing actions the menu resizes. Force an immediate repaint
     // to prevent stale content from the old layout bleeding outside the new bounds.

@@ -29,7 +29,6 @@
 #pragma once
 
 #include <QDialog>
-#include <QHash>
 #include <QList>
 #include <QString>
 
@@ -58,7 +57,7 @@ public:
                             QWidget *parent = nullptr);
 
     // Valid after exec() returns Accepted (SingleSelect mode only)
-    QString selectedText() const;
+    [[nodiscard]] QString selectedText() const;
 
 signals:
     // Emitted immediately on each toggle (MultiSelect mode)

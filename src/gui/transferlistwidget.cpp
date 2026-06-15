@@ -1299,20 +1299,13 @@ void TransferListWidget::displayListMenu()
         }
 
         auto *palette = new CommandPalette(tr("Set Tags"), items, CommandPalette::Mode::MultiSelect, this);
-        connect(palette, &CommandPalette::itemToggled, this, [this, tags](const QString &text, const Qt::CheckState state)
+        connect(palette, &CommandPalette::itemToggled, this, [this](const QString &text, Qt::CheckState state)
         {
-            // Find the Tag matching this display text
-            for (const Tag &tag : tags)
-            {
-                if (Utils::Gui::tagToWidgetText(tag) == text)
-                {
-                    if (state == Qt::Checked)
-                        addSelectionTag(tag);
-                    else
-                        removeSelectionTag(tag);
-                    break;
-                }
-            }
+            const Tag tag = Utils::Gui::widgetTextToTag(text);
+            if (state == Qt::Checked)
+                addSelectionTag(tag);
+            else if (state == Qt::Unchecked)
+                removeSelectionTag(tag);
         });
         palette->exec();
         delete palette;
